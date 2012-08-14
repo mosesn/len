@@ -15,7 +15,18 @@ object Len {
       scala.sys.exit(0)
     }
 
-    if (fileHasLongLine(getLength(args), getFile(args))) scala.sys.exit(1) else scala.sys.exit(0)
+    val lines = longLines(getLength(args), getFile(args))
+    if (lines.hasNext) {
+      println("The following lines have problems.")
+      for ((line, number) <- lines) {
+        println("L%d: %s, length: %d".format(number, line, line.length))
+      }
+      scala.sys.exit(1)
+    }
+    else {
+      println("All lines are ok.")
+      scala.sys.exit(0)
+    }
   }
 
   private[this] def getLength(args: Array[String]): Int =
@@ -40,17 +51,13 @@ object Len {
       throw new IllegalArgumentException("Bad arguments")
     }
 
-  private[this] def getFile(args: Array[String]): scala.io.BufferedSource =
-    if (args.length == 3) {
-      io.Source.fromFile(args(2))
-    }
-    else if (args.length == 1) {
-      io.Source.fromFile(args(0))
-    }
-    else {
-      io.Source.stdin
-    }
+  private[this] def getFile(args: Array[String]): scala.io.BufferedSource = args.length match {
+    case x if (x == 3) => io.Source.fromFile(args(2))
+    case x if (x == 1) => io.Source.fromFile(args(0))
+    case _ => io.Source.stdin
+  }
 
-  private[this] def fileHasLongLine(length: Int, fp: scala.io.BufferedSource): Boolean =
-    fp.getLines().find(_.length > length).isDefined
+  private[this] def longLines(length: Int,
+    fp: scala.io.BufferedSource): Iterator[Tuple2[String, Int]] =
+    fp.getLines().zipWithIndex filter (_._1.length > length)
 }
